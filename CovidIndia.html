@@ -1,0 +1,273 @@
+<html>
+  <head>
+    <!--Load the AJAX API-->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      var myMapsApiKey = 'AIzaSyCjKabbXMnzp4fI-Z34q3SttgmrKR-HVHI';
+      // Load the Visualization API and the corechart package.
+      google.charts.load('current', {packages: ['corechart', 'line', 'bar', 'geochart'], 
+                                      'mapsApiKey': myMapsApiKey });
+
+      // Set a callback to run when the Google Visualization API is loaded.
+      google.charts.setOnLoadCallback(initialize);
+
+
+
+      // Callback that creates and populates a data table,
+      // instantiates the pie chart, passes in the data and
+      // draws it.
+
+      function initialize() {
+        var opts = {sendMethod: 'auto'};
+        // Reading data from google spread sheet
+        var query = new google.visualization.Query('https://docs.google.com/spreadsheets/d/1Z_zXu_aMqZBnqP5nmHOGsix0Mw3-ep33Fq42kz26-kg/gviz/tq?sheet=Data', opts);
+        // Optional request to return only column C and the sum of column B, grouped by C members.
+        //query.setQuery('select C, sum(B) group by C');
+
+        // Send the query with a callback function.
+        query.send(handleQueryResponse);
+
+        getPieChartData();
+        //getDonutChartData();
+        getAgeWiseColumnChartData();
+        //drawBarChart();
+        //drawColumnChart();
+
+      }      
+
+      function getPieChartData() {
+        var opts = {sendMethod: 'auto'};
+        // Reading data from google spread sheet
+        var query = new google.visualization.Query('https://docs.google.com/spreadsheets/d/1Z_zXu_aMqZBnqP5nmHOGsix0Mw3-ep33Fq42kz26-kg/gviz/tq?sheet=Gender', opts);  
+        query.send(handlePieChartQueryResponse);      
+      }
+
+      function getAgeWiseColumnChartData() {
+        var opts = {sendMethod: 'auto'};
+        // Reading data from google spread sheet
+        var query = new google.visualization.Query('https://docs.google.com/spreadsheets/d/1Z_zXu_aMqZBnqP5nmHOGsix0Mw3-ep33Fq42kz26-kg/gviz/tq?sheet=Age', opts);  
+        query.send(handleAgeWiseColumnChartQueryResponse);     
+      }
+
+      function handleAgeWiseColumnChartQueryResponse(response) {
+        var allData = response.getDataTable();
+
+        var data = new google.visualization.DataTable();
+        data.addColumn('number', 'Age');
+        data.addColumn('number', 'Number of Infected');        
+
+        var arrayData = [];
+        for (var i = 1; i < allData.getNumberOfRows(); i++) {
+            arrayData[i-1] = [];
+
+            var val1 = allData.getValue(i, 0);
+            var val2 = allData.getValue(i, 1);
+
+            if (val1 != '' && val1 != null) {
+              arrayData[i-1][0] = new Number(val1).valueOf();
+            } 
+
+            if (val2 != '' && val2 != null) {
+              arrayData[i-1][1] = new Number(val2).valueOf();
+            }
+           
+        }
+        
+        data.addRows(arrayData);
+        /*
+        var options = {
+          chart: {
+            title: 'Age-Wise Covid Distribution'
+          }
+        };*/
+
+        var options = {
+          title: 'Age-Wise Covid Distribution',
+          colors: ['#33ac71'],
+          height: 500
+        }
+        var chart = new google.visualization.ColumnChart(document.getElementById('column_chart_div'));
+        chart.draw(data, options);        
+
+      }
+
+      function handlePieChartQueryResponse(response) {
+        var data = response.getDataTable();
+        var options = {
+          width: 400, 
+          height: 240, 
+          is3D: true,
+          colors: ['#4682B4','#FFB6C1']
+        };
+        var chart = new google.visualization.PieChart(document.getElementById('pie_chart_div'));
+        chart.draw(data, options);
+      }
+
+      function handleDonutChartQueryResponse(response) {
+        var data = response.getDataTable();
+
+        var options = {
+          title: 'My Daily Activities',
+          pieHole: 0.4,
+        };
+
+        var chart = new google.visualization.PieChart(document.getElementById('donut_chart_div'));
+        chart.draw(data, options);
+      }
+
+      function handleQueryResponse(response) {
+
+        if (response.isError()) {
+          alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+          return;
+        }
+
+      //drawPieChart(response)
+        drawCharts(response);
+
+        //draw line chart
+        //drawLineColors();
+
+        //draw bar chart
+        //drawBarChart();
+
+        //draw donut chart
+        //drawDonutChart();
+
+        //draw column chart
+        //drawColumnChart();
+
+        //draw regioins map
+        //drawRegionsMap();
+
+                    //drawLineColors();
+
+      }      
+
+      function drawCharts(response) {
+        var allData = response.getDataTable();
+        drawLineCharts(allData);
+      }
+      
+
+      function drawDailyCountLineChart(dailyCountDataTable) {
+        var dailyDataOptions = {
+          pointsVisible: true,
+          pointSize: 5,
+          width: 1500,
+          height: 400,
+          hAxis: {
+            title: 'Date',
+            format: 'dd/MM/yy',
+            gridlines: {count: 5}
+          },
+          vAxis: {
+            title: 'Daily Count'
+          },
+          colors: ['#cc3300']
+        };// #ff0000
+
+        var chart = new google.visualization.LineChart(document.getElementById('daily_count_line_chart_div'));
+        chart.draw(dailyCountDataTable, dailyDataOptions);                
+      }
+
+      function drawCumulativeCountLineChart(cumulativeCountDataTable) {
+        var cumulativeDataOptions = {
+          pointsVisible: true,
+          pointSize: 5,
+          width: 1500,
+          height: 400,              
+          hAxis: {
+            title: 'Date',
+            format: 'dd/MM/yy',
+            gridlines: {count: 5}
+          },
+          vAxis: {
+            title: 'Cumulative Count'
+          },
+          colors: ['#cc3300']
+        };//'#a52714', '#097138'
+        var chart = new google.visualization.LineChart(document.getElementById('cumulative_count_line_chart_div'));
+        chart.draw(cumulativeCountDataTable, cumulativeDataOptions);
+      }
+
+      function drawLineCharts(allData) {
+        var dailyDataOptions = {
+          pointsVisible: true,
+          pointSize: 5,
+          hAxis: {
+            title: 'Date',
+            format: 'dd/MM/yy',
+            gridlines: {count: 5}
+          },
+          vAxis: {
+            title: 'Daily Count'
+          },
+          colors: ['#a52714', '#097138']
+        };
+
+        var cumulativeDataOptions = {
+          pointsVisible: true,
+          pointSize: 5,
+          hAxis: {
+            title: 'Date',
+            format: 'dd/MM/yy',
+            gridlines: {count: 5}
+          },
+          vAxis: {
+            title: 'Cumulative Count'
+          },
+          colors: ['#a52714', '#097138']
+        };            
+
+        var dailyCountData = new google.visualization.DataTable();
+        dailyCountData.addColumn('date', 'Date');
+        dailyCountData.addColumn('number', 'Daily Count');
+
+        var cumulativeCountData = new google.visualization.DataTable();
+        cumulativeCountData.addColumn('date', 'Date');
+        cumulativeCountData.addColumn('number', 'Cumulative Count');
+
+
+        var dailyCountArrayData = [];
+        var cumulativeCountArrayData = [];
+
+        for (var i = 0; i < allData.getNumberOfRows(); i++) {
+            dailyCountArrayData[i] = [];
+            cumulativeCountArrayData[i] = [];
+
+            var val1 = allData.getValue(i, 0);
+            var val2 = allData.getValue(i, 1);
+            var val3 = allData.getValue(i, 2);
+
+
+            var parts = val1.split('/');
+            var val1Date = new Date(parts[2], parts[1] - 1, parts[0]);
+
+            dailyCountArrayData[i][0] = val1Date;
+            cumulativeCountArrayData[i][0] = val1Date;
+            if (val2 != '' && val2 != null) {
+              dailyCountArrayData[i][1] = new Number(val2).valueOf();
+            }
+            if (val3 != '' && val3 != null) {
+              cumulativeCountArrayData[i][1] = new Number(val3).valueOf();
+            }                
+        }
+        dailyCountData.addRows(dailyCountArrayData);
+        cumulativeCountData.addRows(cumulativeCountArrayData);
+
+        drawDailyCountLineChart(dailyCountData);
+        drawCumulativeCountLineChart(cumulativeCountData);
+
+      }
+    </script>
+  </head>
+
+  <body>
+    <div id="cumulative_count_line_chart_div"></div>
+    <div id="daily_count_line_chart_div"></div>    
+    <div id="pie_chart_div"></div>    
+    <div id="column_chart_div"></div>
+    <input type="button" onClick="history.go(0)" value="Refresh">
+  </body>
+</html>
